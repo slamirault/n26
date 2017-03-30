@@ -16,7 +16,8 @@ import transactionService.Helpers.TransactionHelper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Timer;
-import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @RestController
 public class TransactionController
@@ -28,12 +29,14 @@ public class TransactionController
     BucketHelper bucketHelper;
     Timer timer = new Timer();
 
+    Logger logger = Logger.getLogger(TransactionController.class.getName());
+
 
     public TransactionController()
     {
         bucketHelper = new BucketHelper();
-        Bucket[] buckets = bucketHelper.getBuckets();
         timerHelper = new TimerHelper(timer, bucketHelper);
+        logger.log(Level.INFO, "Initializing helpers");
     }
 
     /*
@@ -42,6 +45,7 @@ public class TransactionController
     @RequestMapping(value={"/", "/health"}, method = RequestMethod.GET, produces = MediaType.TEXT_HTML_VALUE)
     public String health()
     {
+        logger.log(Level.INFO, "Health page was called");
         return "<!DOCTYPE html>\n" +
                 "<html lang=\"en\">\n" +
                 "<head>\n" +
@@ -58,16 +62,19 @@ public class TransactionController
     public String transactions(@RequestParam double amount, @RequestParam long timestamp,
                          HttpServletRequest request, HttpServletResponse response)
     {
+        logger.log(Level.INFO, "transaction API was called");
         TransactionHelper helper = new TransactionHelper(jdbcTemplate);
         bucketHelper.addToBuckets(amount, timestamp, TimerHelper.getCurrentPosition());
         boolean transactionAdded = helper.addTransaction(amount, timestamp);
 
         if (transactionAdded)
         {
+            logger.log(Level.WARNING, "Transaction was added");
             response.setStatus(HttpServletResponse.SC_CREATED);
         }
         else
         {
+            logger.log(Level.WARNING, "Transaction was not added");
             response.setStatus(HttpServletResponse.SC_NO_CONTENT);
         }
 
@@ -75,9 +82,9 @@ public class TransactionController
     }
 
     @RequestMapping(value="/statistics", method = RequestMethod.GET)
-    public Bucket statistics(
-            HttpServletRequest request, HttpServletResponse response)
+    public Bucket statistics()
     {
+        logger.log(Level.INFO, "statistics API was called");
         return bucketHelper.calculateStatistics();
     }
 

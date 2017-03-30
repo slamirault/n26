@@ -1,17 +1,25 @@
 package transactionService.Helpers;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class BucketHelper
 {
     Bucket[] buckets = new Bucket[60];
     Object lock = new Object();
+    Logger logger = Logger.getLogger(BucketHelper.class.getName());
 
     public BucketHelper()
     {
+        /*
+        TODO: In case the server goes down, the values should be pulled from the db initially
+         */
         buckets = new Bucket[60];
         for (int i = 0; i < 60; i++)
         {
             buckets[i] = new Bucket();
         }
+        logger.log(Level.INFO, "Buckets initialized");
     }
 
     public Bucket[] getBuckets()
@@ -23,10 +31,10 @@ public class BucketHelper
     {
         synchronized(lock)
         {
-            /*TODO REMOVE 60*/
             int secondDifference = (int) Math.floorDiv((System.currentTimeMillis() - timestamp), 1000);
             if (secondDifference > 60)
             {
+                logger.log(Level.INFO, "Value added too far in the past");
                 return;
             }
 
@@ -47,6 +55,7 @@ public class BucketHelper
             currentBucket.increaseCount(1);
             currentBucket.increaseSum(amount);
             currentBucket.calculateAvg();
+            logger.log(Level.INFO, "Value was added to bucket");
         }
     }
 

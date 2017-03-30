@@ -3,9 +3,12 @@ package transactionService.Helpers;
 import domain.TransactionRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.logging.Logger;
+
 public class TransactionHelper
 {
     JdbcTemplate jdbcTemplate;
+    Logger logger = Logger.getLogger(TransactionHelper.class.getName());
 
     public TransactionHelper(JdbcTemplate jdbcTemplate)
     {

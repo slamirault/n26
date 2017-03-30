@@ -9,7 +9,6 @@ public class Bucket
     double avg = 0.0;
     double max = Double.MIN_VALUE;
     double min = Double.MAX_VALUE;
-    double maxi = Double.NaN;
     long count = 0;
 
     public double getSum()
@@ -67,19 +66,9 @@ public class Bucket
         count += amount;
     }
 
-    public void decreaseCount(long amount)
-    {
-        count -= amount;
-    }
-
     public void increaseSum(double amount)
     {
         sum += amount;
-    }
-
-    public void decreaseSum(double amount)
-    {
-        sum -= amount;
     }
 
     public void calculateAvg()
