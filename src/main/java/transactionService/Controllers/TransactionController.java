@@ -1,0 +1,84 @@
+package transactionService.Controllers;
+
+import domain.Transaction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import transactionService.Helpers.Bucket;
+import transactionService.Helpers.BucketHelper;
+import transactionService.Helpers.TimerHelper;
+import transactionService.Helpers.TransactionHelper;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Timer;
+import java.util.TimerTask;
+
+@RestController
+public class TransactionController
+{
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    TimerHelper timerHelper;
+    BucketHelper bucketHelper;
+    Timer timer = new Timer();
+
+
+    public TransactionController()
+    {
+        bucketHelper = new BucketHelper();
+        Bucket[] buckets = bucketHelper.getBuckets();
+        timerHelper = new TimerHelper(timer, bucketHelper);
+    }
+
+    /*
+     * Just a get method to poke the server
+     */
+    @RequestMapping(value={"/", "/health"}, method = RequestMethod.GET, produces = MediaType.TEXT_HTML_VALUE)
+    public String health()
+    {
+        return "<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "<head>\n" +
+                "    <meta charset=\"UTF-8\">\n" +
+                "    <title>Health</title>\n" +
+                "</head>\n" +
+                "<body style='background-color:#D8BFD8'>\n" +
+                "    <p style='color:purple; font-weight: bold;'>My service is up and running! :)</p>\n" +
+                "</body>\n" +
+                "</html>";
+    }
+
+    @RequestMapping(value="/transactions", method = RequestMethod.POST)
+    public String transactions(@RequestParam double amount, @RequestParam long timestamp,
+                         HttpServletRequest request, HttpServletResponse response)
+    {
+        TransactionHelper helper = new TransactionHelper(jdbcTemplate);
+        bucketHelper.addToBuckets(amount, timestamp, TimerHelper.getCurrentPosition());
+        boolean transactionAdded = helper.addTransaction(amount, timestamp);
+
+        if (transactionAdded)
+        {
+            response.setStatus(HttpServletResponse.SC_CREATED);
+        }
+        else
+        {
+            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+        }
+
+        return "{}";
+    }
+
+    @RequestMapping(value="/statistics", method = RequestMethod.GET)
+    public Bucket statistics(
+            HttpServletRequest request, HttpServletResponse response)
+    {
+        return bucketHelper.calculateStatistics();
+    }
+
+}
